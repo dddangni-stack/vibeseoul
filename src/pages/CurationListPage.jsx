@@ -59,7 +59,7 @@ export default function CurationListPage() {
           onClick={() => setModalOpen(true)}
           style={{
             position: 'fixed',
-            top: '96px',
+            top: '156px',
             right: '24px',
             width: '56px',
             height: '56px',

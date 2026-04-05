@@ -258,7 +258,7 @@ export default function PlaceListPage() {
         title="장소 추가"
         style={{
           position: 'fixed',
-          top: '96px',
+          top: '156px',
           right: '24px',
           width: '56px',
           height: '56px',
