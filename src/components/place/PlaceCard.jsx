@@ -15,6 +15,7 @@ import Tag from '../common/Tag'
 import Badge from '../common/Badge'
 import BookmarkButton from './BookmarkButton'
 import { getPlaceTags } from '../../lib/tags'
+import { getPlaceImage, FALLBACK_IMAGE } from '../../lib/imageUtils'
 import { usePlaceStore } from '../../context/PlaceStoreContext'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
@@ -30,9 +31,7 @@ export default function PlaceCard({ place, showBookmark = false, size = 'default
     ? place.place_tags.map(pt => pt.tags).filter(Boolean)
     : getPlaceTags(place)
 
-  const coverImage =
-    place.cover_image_url ||
-    'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600&q=70'
+  const coverImage = getPlaceImage(place)
 
   const isCustom = Boolean(place.isCustom || place.source === 'custom')
   const canEdit = isCustom && Boolean(user && place.user_id === user.id)
@@ -86,10 +85,7 @@ export default function PlaceCard({ place, showBookmark = false, size = 'default
               objectFit: 'cover',
               transition: 'transform 0.4s ease',
             }}
-            onError={e => {
-              e.target.src =
-                'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600&q=70'
-            }}
+            onError={e => { e.target.src = FALLBACK_IMAGE }}
             onMouseEnter={e => { e.target.style.transform = 'scale(1.04)' }}
             onMouseLeave={e => { e.target.style.transform = 'scale(1)' }}
           />

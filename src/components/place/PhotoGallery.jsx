@@ -11,11 +11,14 @@
  */
 
 import { useState } from 'react'
+import { FALLBACK_IMAGE } from '../../lib/imageUtils'
 
 export default function PhotoGallery({ images = [], placeName = '' }) {
   const [activeIndex, setActiveIndex] = useState(0)
 
-  if (!images.length) return null
+  const displayImages = images.length
+    ? images
+    : [{ image_url: FALLBACK_IMAGE, alt_text: placeName }]
 
   return (
     <div>
@@ -43,8 +46,8 @@ export default function PhotoGallery({ images = [], placeName = '' }) {
           }}
         >
           <img
-            src={images[activeIndex]?.image_url}
-            alt={images[activeIndex]?.alt_text || placeName}
+            src={displayImages[activeIndex]?.image_url}
+            alt={displayImages[activeIndex]?.alt_text || placeName}
             style={{
               width: '100%',
               height: '100%',
@@ -52,12 +55,12 @@ export default function PhotoGallery({ images = [], placeName = '' }) {
               transition: 'opacity 0.3s ease',
             }}
             onError={e => {
-              e.target.src = 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800&q=70'
+              e.target.src = FALLBACK_IMAGE
             }}
           />
 
           {/* 이미지 인덱스 표시 */}
-          {images.length > 1 && (
+          {displayImages.length > 1 && (
             <div
               style={{
                 position: 'absolute',
@@ -71,14 +74,14 @@ export default function PhotoGallery({ images = [], placeName = '' }) {
                 borderRadius: '100px',
               }}
             >
-              {activeIndex + 1} / {images.length}
+              {activeIndex + 1} / {displayImages.length}
             </div>
           )}
         </div>
       </div>
 
       {/* 썸네일 네비게이션 (이미지 2장 이상일 때) */}
-      {images.length > 1 && (
+      {displayImages.length > 1 && (
         <div
           style={{
             display: 'flex',
@@ -88,7 +91,7 @@ export default function PhotoGallery({ images = [], placeName = '' }) {
           }}
           className="scrollbar-hide"
         >
-          {images.map((img, i) => (
+          {displayImages.map((img, i) => (
             <button
               key={i}
               onClick={() => setActiveIndex(i)}
@@ -110,7 +113,7 @@ export default function PhotoGallery({ images = [], placeName = '' }) {
                 alt={img.alt_text || `${placeName} 사진 ${i + 1}`}
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 onError={e => {
-                  e.target.src = 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=200&q=60'
+                  e.target.src = FALLBACK_IMAGE
                 }}
               />
             </button>

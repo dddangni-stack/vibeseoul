@@ -351,6 +351,7 @@ function EditorialGrid({ places }) {
 
 /* 피처 장소 카드 — 큰 이미지 + 잡지 스타일 텍스트 */
 import { getPlaceTags } from '../lib/tags'
+import { getPlaceImage, FALLBACK_IMAGE } from '../lib/imageUtils'
 import Badge from '../components/common/Badge'
 import Tag from '../components/common/Tag'
 import BookmarkButton from '../components/place/BookmarkButton'
@@ -374,8 +375,9 @@ function FeaturedPlaceCard({ place }) {
       >
         {/* 배경 이미지 */}
         <img
-          src={place.cover_image_url}
+          src={getPlaceImage(place)}
           alt={place.name}
+          onError={e => { e.target.src = FALLBACK_IMAGE }}
           style={{
             position: 'absolute',
             inset: 0,

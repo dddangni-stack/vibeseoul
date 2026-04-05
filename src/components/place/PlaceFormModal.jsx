@@ -13,6 +13,7 @@ import { usePlaceStore } from '../../context/PlaceStoreContext'
 import { useAuth } from '../../context/AuthContext'
 import { TAGS } from '../../lib/tags'
 import { supabase } from '../../lib/supabase'
+import { uploadPlaceImage, FALLBACK_IMAGE } from '../../lib/imageUtils'
 
 const CATEGORIES = [
   { value: 'cafe', label: '카페' },
@@ -79,6 +80,8 @@ export default function PlaceFormModal({ isOpen, onClose, initialData }) {
   const [errors, setErrors] = useState({})
   const [toast, setToast] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState(null)
 
   // 모달 열릴 때 폼 초기화
   useEffect(() => {
@@ -86,6 +89,7 @@ export default function PlaceFormModal({ isOpen, onClose, initialData }) {
       setForm(initialData ? placeToForm(initialData) : EMPTY_FORM)
       setErrors({})
       setToast(null)
+      setUploadError(null)
     }
   }, [isOpen, initialData])
 
@@ -110,6 +114,22 @@ export default function PlaceFormModal({ isOpen, onClose, initialData }) {
     if (!form.name.trim()) errs.name = '장소명을 입력해주세요'
     if (!form.region.trim()) errs.region = '지역을 입력해주세요'
     return errs
+  }
+
+  async function handleFileChange(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!supabase || !user) return
+    setUploading(true)
+    setUploadError(null)
+    try {
+      const url = await uploadPlaceImage(supabase, file, user.id)
+      set('cover_image_url', url)
+    } catch (err) {
+      setUploadError('이미지 업로드에 실패했어요. 다시 시도하거나 URL을 직접 입력해주세요.')
+    } finally {
+      setUploading(false)
+    }
   }
 
   async function handleSubmit(e) {
@@ -394,10 +414,68 @@ export default function PlaceFormModal({ isOpen, onClose, initialData }) {
             />
           </Field>
 
-          {/* 이미지 URL */}
-          <Field label="대표 이미지 URL" hint="없으면 기본 이미지가 표시됩니다">
+          {/* 이미지 업로드 / URL */}
+          <Field label="대표 이미지" hint="없으면 기본 이미지가 표시됩니다">
+            {/* 파일 선택 버튼 */}
+            <label
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '9px 16px',
+                fontSize: '13px',
+                fontWeight: 600,
+                color: uploading ? '#B5ADA3' : '#5C5C5C',
+                backgroundColor: '#FAF8F5',
+                border: '1.5px solid #EDE8E2',
+                borderRadius: '10px',
+                cursor: uploading ? 'not-allowed' : 'pointer',
+                marginBottom: '10px',
+              }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+              {uploading ? '업로드 중...' : '파일 선택'}
+              <input
+                type="file"
+                accept="image/*"
+                disabled={uploading}
+                onChange={handleFileChange}
+                style={{ display: 'none' }}
+              />
+            </label>
+
+            {/* 업로드 에러 */}
+            {uploadError && (
+              <p style={{ fontSize: '12px', color: '#C1714F', marginBottom: '8px' }}>
+                {uploadError}
+              </p>
+            )}
+
+            {/* 미리보기 */}
+            {form.cover_image_url && (
+              <div style={{ marginBottom: '10px' }}>
+                <img
+                  src={form.cover_image_url}
+                  alt="미리보기"
+                  onError={e => { e.target.src = FALLBACK_IMAGE }}
+                  style={{
+                    width: '100%',
+                    height: '140px',
+                    objectFit: 'cover',
+                    borderRadius: '10px',
+                    border: '1.5px solid #EDE8E2',
+                  }}
+                />
+              </div>
+            )}
+
+            {/* URL 직접 입력 (파일 업로드 대안) */}
             <Input
-              placeholder="https://..."
+              placeholder="또는 이미지 URL 직접 입력 (https://...)"
               value={form.cover_image_url}
               onChange={e => set('cover_image_url', e.target.value)}
             />
