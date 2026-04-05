@@ -27,14 +27,15 @@ import Spinner from '../components/common/Spinner'
 import PageWrapper from '../components/layout/PageWrapper'
 import { usePlaceDetail } from '../hooks/usePlaceDetail'
 import { usePlaceStore } from '../context/PlaceStoreContext'
-import { getPlaceTags } from '../data/sampleData'
+import { getPlaceTags } from '../lib/tags'
 import { getCategoryLabel, getPriceDescription } from '../utils/formatters'
+import { supabase } from '../lib/supabase'
 
 export default function PlaceDetailPage() {
   const { slug } = useParams()
   const navigate = useNavigate()
   const { place, loading, error } = usePlaceDetail(slug)
-  const { deleteCustomPlace, hidePlace } = usePlaceStore()
+  const { deleteCustomPlace, hidePlace, triggerRefresh } = usePlaceStore()
 
   const [modalOpen, setModalOpen] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -84,11 +85,16 @@ export default function PlaceDetailPage() {
   // 이미지 배열 정리
   const images = place.images || place.place_images || []
 
-  function handleDelete() {
-    if (isCustom) {
-      deleteCustomPlace(place.id)
+  async function handleDelete() {
+    if (supabase) {
+      await supabase.from('places').delete().eq('id', place.id)
+      triggerRefresh()
     } else {
-      hidePlace(place.id)
+      if (isCustom) {
+        deleteCustomPlace(place.id)
+      } else {
+        hidePlace(place.id)
+      }
     }
     navigate('/places')
   }
@@ -215,7 +221,8 @@ export default function PlaceDetailPage() {
             </div>
           )}
 
-          {/* 수정 / 삭제 버튼 영역 */}
+          {/* 수정 / 삭제 버튼 영역 — Supabase 모드에선 custom 장소만 표시 */}
+          {(isCustom || !supabase) && (
           <div style={{ display: 'flex', gap: '8px', marginBottom: '28px' }}>
             {/* 수정: 사용자 추가 장소만 */}
             {isCustom && (
@@ -311,6 +318,7 @@ export default function PlaceDetailPage() {
               </div>
             )}
           </div>
+          )}
 
           <hr style={{ border: 'none', borderTop: '1px solid #EDE8E2', marginBottom: '28px' }} />
 

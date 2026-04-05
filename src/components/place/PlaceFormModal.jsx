@@ -10,7 +10,8 @@
 
 import { useState, useEffect } from 'react'
 import { usePlaceStore } from '../../context/PlaceStoreContext'
-import { TAGS } from '../../data/sampleData'
+import { TAGS } from '../../lib/tags'
+import { supabase } from '../../lib/supabase'
 
 const CATEGORIES = [
   { value: 'cafe', label: '카페' },
@@ -69,12 +70,13 @@ function placeToForm(place) {
 }
 
 export default function PlaceFormModal({ isOpen, onClose, initialData }) {
-  const { addPlace, updatePlace } = usePlaceStore()
+  const { addPlace, updatePlace, triggerRefresh } = usePlaceStore()
   const isEdit = Boolean(initialData)
 
   const [form, setForm] = useState(EMPTY_FORM)
   const [errors, setErrors] = useState({})
   const [toast, setToast] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
 
   // 모달 열릴 때 폼 초기화
   useEffect(() => {
@@ -108,29 +110,125 @@ export default function PlaceFormModal({ isOpen, onClose, initialData }) {
     return errs
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
     const errs = validate()
     if (Object.keys(errs).length > 0) {
       setErrors(errs)
       return
     }
+    setSubmitting(true)
 
     const placeData = formToPlace(form)
 
-    if (isEdit) {
-      updatePlace(initialData.id, placeData)
-      showToast('수정되었어요!')
-    } else {
-      addPlace(placeData)
-      showToast('장소가 추가되었어요!')
+    try {
+      if (supabase) {
+        await handleSupabaseSubmit(placeData)
+      } else {
+        if (isEdit) {
+          updatePlace(initialData.id, placeData)
+        } else {
+          addPlace(placeData)
+        }
+      }
+      setToast(isEdit ? '수정되었어요!' : '장소가 추가되었어요!')
+      setTimeout(() => onClose(), 800)
+    } catch (err) {
+      setErrors({ submit: err.message || '저장 중 오류가 발생했어요. 다시 시도해주세요.' })
+    } finally {
+      setSubmitting(false)
     }
-
-    setTimeout(() => onClose(), 800)
   }
 
-  function showToast(msg) {
-    setToast(msg)
+  async function handleSupabaseSubmit(placeData) {
+    // 태그 ID(t1, t2...) → slug → Supabase UUID 변환
+    const tagSlugs = form.tags
+      .map(tid => TAGS.find(t => t.id === tid)?.slug)
+      .filter(Boolean)
+
+    if (isEdit) {
+      // 수정: place 업데이트 후 tags/images 재삽입
+      const { error: upErr } = await supabase
+        .from('places')
+        .update({
+          name: placeData.name,
+          region: placeData.region,
+          category: placeData.category,
+          one_liner: placeData.one_liner,
+          atmosphere_desc: placeData.atmosphere_desc,
+          recommended_situations: placeData.recommended_situations,
+          detailed_review: placeData.detailed_review,
+          cover_image_url: placeData.cover_image_url,
+        })
+        .eq('id', initialData.id)
+      if (upErr) throw upErr
+
+      // 태그 재삽입
+      await supabase.from('place_tags').delete().eq('place_id', initialData.id)
+      if (tagSlugs.length > 0) {
+        const { data: tagRows, error: tagErr } = await supabase
+          .from('tags').select('id').in('slug', tagSlugs)
+        if (tagErr) throw tagErr
+        if (tagRows?.length) {
+          const { error: ptErr } = await supabase.from('place_tags')
+            .insert(tagRows.map(t => ({ place_id: initialData.id, tag_id: t.id })))
+          if (ptErr) throw ptErr
+        }
+      }
+
+      // 이미지 재삽입
+      await supabase.from('place_images').delete().eq('place_id', initialData.id)
+      if (placeData.cover_image_url) {
+        await supabase.from('place_images').insert({
+          place_id: initialData.id,
+          image_url: placeData.cover_image_url,
+          alt_text: placeData.name,
+          display_order: 0,
+        })
+      }
+    } else {
+      // 추가: place insert → tags → images 순서
+      const { data: newPlace, error: insErr } = await supabase
+        .from('places')
+        .insert({
+          slug: `custom-${Date.now()}`,
+          name: placeData.name,
+          region: placeData.region,
+          category: placeData.category,
+          one_liner: placeData.one_liner,
+          atmosphere_desc: placeData.atmosphere_desc,
+          recommended_situations: placeData.recommended_situations,
+          detailed_review: placeData.detailed_review,
+          cover_image_url: placeData.cover_image_url,
+          is_published: true,
+          source: 'custom',
+        })
+        .select('id')
+        .single()
+      if (insErr) throw insErr
+
+      if (tagSlugs.length > 0) {
+        const { data: tagRows, error: tagErr } = await supabase
+          .from('tags').select('id').in('slug', tagSlugs)
+        if (tagErr) throw tagErr
+        if (tagRows?.length) {
+          const { error: ptErr } = await supabase.from('place_tags')
+            .insert(tagRows.map(t => ({ place_id: newPlace.id, tag_id: t.id })))
+          if (ptErr) throw ptErr
+        }
+      }
+
+      if (placeData.cover_image_url) {
+        await supabase.from('place_images').insert({
+          place_id: newPlace.id,
+          image_url: placeData.cover_image_url,
+          alt_text: placeData.name,
+          display_order: 0,
+        })
+      }
+    }
+
+    triggerRefresh()
   }
 
   return (
@@ -325,24 +423,33 @@ export default function PlaceFormModal({ isOpen, onClose, initialData }) {
                 ✓ {toast}
               </div>
             ) : (
-              <button
-                type="submit"
-                style={{
-                  width: '100%',
-                  padding: '15px',
-                  fontSize: '15px',
-                  fontWeight: 700,
-                  backgroundColor: '#2C2C2C',
-                  color: '#FAF8F5',
-                  border: 'none',
-                  borderRadius: '12px',
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  letterSpacing: '-0.2px',
-                }}
-              >
-                {isEdit ? '수정 저장' : '장소 추가'}
-              </button>
+              <>
+                {errors.submit && (
+                  <p style={{ fontSize: '13px', color: '#C1714F', marginBottom: '10px', textAlign: 'center' }}>
+                    {errors.submit}
+                  </p>
+                )}
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  style={{
+                    width: '100%',
+                    padding: '15px',
+                    fontSize: '15px',
+                    fontWeight: 700,
+                    backgroundColor: submitting ? '#8C8070' : '#2C2C2C',
+                    color: '#FAF8F5',
+                    border: 'none',
+                    borderRadius: '12px',
+                    cursor: submitting ? 'not-allowed' : 'pointer',
+                    fontFamily: 'inherit',
+                    letterSpacing: '-0.2px',
+                    transition: 'background-color 0.15s',
+                  }}
+                >
+                  {submitting ? '저장 중...' : isEdit ? '수정 저장' : '장소 추가'}
+                </button>
+              </>
             )}
           </div>
         </form>

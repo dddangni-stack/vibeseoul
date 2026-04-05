@@ -16,18 +16,11 @@ import PlaceFormModal from '../components/place/PlaceFormModal'
 import Tag from '../components/common/Tag'
 import { usePlaces } from '../hooks/usePlaces'
 import { useSearch } from '../hooks/useSearch'
-import { usePlaceStore } from '../context/PlaceStoreContext'
-import { PLACES, TAGS } from '../data/sampleData'
+import { TAGS } from '../lib/tags'
 import { SORT_OPTIONS } from '../lib/constants'
 
 export default function PlaceListPage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const { hiddenIds, restorePlace } = usePlaceStore()
-  const [showHidden, setShowHidden] = useState(false)
-
-  // 숨긴 기본 장소 목록
-  const hiddenPlaces = PLACES.filter(p => hiddenIds.includes(p.id))
-
   const activeTag = searchParams.get('tag') || ''
   const sortParam = searchParams.get('sort') || 'latest'
 
@@ -251,87 +244,6 @@ export default function PlaceListPage() {
         emptyDescription="다른 태그나 검색어로 찾아보세요 🔍"
         onEdit={openEdit}
       />
-
-      {/* 숨긴 장소 관리 패널 */}
-      {hiddenPlaces.length > 0 && (
-        <div style={{ marginTop: '40px' }}>
-          <button
-            onClick={() => setShowHidden(prev => !prev)}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontSize: '13px',
-              fontWeight: 600,
-              color: '#B5ADA3',
-              background: 'none',
-              border: '1px solid #EDE8E2',
-              borderRadius: '100px',
-              padding: '7px 16px',
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
-              <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-              <line x1="1" y1="1" x2="23" y2="23" />
-            </svg>
-            숨긴 장소 {hiddenPlaces.length}개 {showHidden ? '접기' : '보기'}
-          </button>
-
-          {showHidden && (
-            <div
-              style={{
-                marginTop: '16px',
-                border: '1px solid #EDE8E2',
-                borderRadius: '12px',
-                overflow: 'hidden',
-                backgroundColor: '#fff',
-              }}
-            >
-              {hiddenPlaces.map((place, i) => (
-                <div
-                  key={place.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '14px 16px',
-                    borderTop: i === 0 ? 'none' : '1px solid #F2EDE6',
-                  }}
-                >
-                  <div>
-                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#5C5C5C' }}>
-                      {place.name}
-                    </span>
-                    <span style={{ fontSize: '12px', color: '#B5ADA3', marginLeft: '8px' }}>
-                      {place.region}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => restorePlace(place.id)}
-                    style={{
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      color: '#C1714F',
-                      background: 'none',
-                      border: '1px solid #F0D8CC',
-                      borderRadius: '100px',
-                      padding: '5px 14px',
-                      cursor: 'pointer',
-                      fontFamily: 'inherit',
-                      backgroundColor: '#FFF5F0',
-                    }}
-                  >
-                    복구
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
 
       {/* 플로팅 장소 추가 버튼 */}
       <button

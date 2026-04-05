@@ -8,7 +8,7 @@
 
 import { useNavigate } from 'react-router-dom'
 import PageWrapper from '../components/layout/PageWrapper'
-import { TAGS } from '../data/sampleData'
+import { TAGS } from '../lib/tags'
 import { getTagColor } from '../utils/tagColors'
 
 export default function TagExplorationPage() {

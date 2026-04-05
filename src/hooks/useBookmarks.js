@@ -10,7 +10,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { PLACES } from '../data/sampleData'
 
 export function useBookmarks() {
   const { user } = useAuth()
@@ -44,7 +43,7 @@ export function useBookmarks() {
           const stored = localStorage.getItem('vibe_seoul_bookmarks')
           const ids = stored ? JSON.parse(stored) : []
           setBookmarkedIds(new Set(ids))
-          setBookmarkedPlaces(PLACES.filter(p => ids.includes(p.id)))
+          setBookmarkedPlaces([])
         }
       } finally {
         setLoading(false)
@@ -68,7 +67,7 @@ export function useBookmarks() {
       newIds.add(placeId)
     }
     setBookmarkedIds(newIds)
-    setBookmarkedPlaces(PLACES.filter(p => newIds.has(p.id)))
+    setBookmarkedPlaces([])
 
     // 2. 서버 동기화
     try {
@@ -95,7 +94,7 @@ export function useBookmarks() {
     } catch {
       // 3. 실패 시 롤백
       setBookmarkedIds(bookmarkedIds)
-      setBookmarkedPlaces(PLACES.filter(p => bookmarkedIds.has(p.id)))
+      setBookmarkedPlaces([])
       return false
     }
   }, [user, bookmarkedIds])

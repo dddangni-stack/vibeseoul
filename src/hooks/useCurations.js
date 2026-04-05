@@ -5,7 +5,6 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { CURATIONS, getCurationPlaces } from '../data/sampleData'
 
 // 큐레이션 목록
 export function useCurations({ limit = 10 } = {}) {
@@ -28,7 +27,7 @@ export function useCurations({ limit = 10 } = {}) {
           if (err) throw err
           if (!cancelled) setData(rows)
         } else {
-          if (!cancelled) setData(CURATIONS.slice(0, limit))
+          if (!cancelled) setData([])
         }
       } catch (err) {
         if (!cancelled) setError(err)
@@ -73,12 +72,7 @@ export function useCurationDetail(slug) {
             )
           }
         } else {
-          const found = CURATIONS.find(c => c.slug === slug)
-          if (!found) throw new Error('큐레이션을 찾을 수 없습니다.')
-          if (!cancelled) {
-            setCuration(found)
-            setPlaces(getCurationPlaces(found))
-          }
+          if (!cancelled) setError(new Error('Supabase가 연결되어 있지 않습니다.'))
         }
       } catch (err) {
         if (!cancelled) setError(err)

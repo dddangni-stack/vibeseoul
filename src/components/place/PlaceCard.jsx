@@ -14,11 +14,12 @@ import { Link, useNavigate } from 'react-router-dom'
 import Tag from '../common/Tag'
 import Badge from '../common/Badge'
 import BookmarkButton from './BookmarkButton'
-import { getPlaceTags } from '../../data/sampleData'
+import { getPlaceTags } from '../../lib/tags'
 import { usePlaceStore } from '../../context/PlaceStoreContext'
+import { supabase } from '../../lib/supabase'
 
 export default function PlaceCard({ place, showBookmark = false, size = 'default', onEdit }) {
-  const { deleteCustomPlace, hidePlace } = usePlaceStore()
+  const { deleteCustomPlace, hidePlace, triggerRefresh } = usePlaceStore()
   const navigate = useNavigate()
   const [confirmDelete, setConfirmDelete] = useState(false)
 
@@ -33,11 +34,18 @@ export default function PlaceCard({ place, showBookmark = false, size = 'default
 
   const isCustom = Boolean(place.isCustom || place.source === 'custom')
 
-  function handleDelete() {
-    if (isCustom) {
-      deleteCustomPlace(place.id)
+  async function handleDelete() {
+    if (supabase) {
+      // Supabase 모드: custom 장소만 삭제 가능 (RLS가 default 장소 차단)
+      await supabase.from('places').delete().eq('id', place.id)
+      triggerRefresh()
     } else {
-      hidePlace(place.id)
+      // 로컬 모드
+      if (isCustom) {
+        deleteCustomPlace(place.id)
+      } else {
+        hidePlace(place.id)
+      }
     }
     setConfirmDelete(false)
   }
@@ -161,7 +169,8 @@ export default function PlaceCard({ place, showBookmark = false, size = 'default
           </div>
         )}
 
-        {/* 액션 버튼 영역 */}
+        {/* 액션 버튼 영역 — Supabase 모드에선 custom 장소만, 로컬 모드에선 모든 장소 */}
+        {(isCustom || !supabase) && (
         <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
           {/* 수정 버튼: 사용자 추가 장소만 */}
           {isCustom && onEdit && (
@@ -249,6 +258,7 @@ export default function PlaceCard({ place, showBookmark = false, size = 'default
             </div>
           )}
         </div>
+        )}
       </div>
     </div>
   )

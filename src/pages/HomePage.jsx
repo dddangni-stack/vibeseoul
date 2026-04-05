@@ -18,7 +18,7 @@ import PlaceCardSkeleton from '../components/place/PlaceCardSkeleton'
 import CurationCard from '../components/curation/CurationCard'
 import { usePlaces } from '../hooks/usePlaces'
 import { useCurations } from '../hooks/useCurations'
-import { TAGS, PLACES } from '../data/sampleData'
+import { TAGS } from '../lib/tags'
 import { getTagColor } from '../utils/tagColors'
 
 export default function HomePage() {
@@ -350,7 +350,7 @@ function EditorialGrid({ places }) {
 }
 
 /* 피처 장소 카드 — 큰 이미지 + 잡지 스타일 텍스트 */
-import { getPlaceTags } from '../data/sampleData'
+import { getPlaceTags } from '../lib/tags'
 import Badge from '../components/common/Badge'
 import Tag from '../components/common/Tag'
 import BookmarkButton from '../components/place/BookmarkButton'

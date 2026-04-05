@@ -183,7 +183,9 @@ CREATE INDEX IF NOT EXISTS idx_curations_slug ON curations(slug);
 -- [A] 누락 컬럼 추가
 ALTER TABLE places
   ADD COLUMN IF NOT EXISTS recommended_situations TEXT[] DEFAULT '{}',
-  ADD COLUMN IF NOT EXISTS source                 TEXT    NOT NULL DEFAULT 'custom';
+  ADD COLUMN IF NOT EXISTS source                 TEXT    NOT NULL DEFAULT 'custom',
+  -- user_id: 향후 로그인 기능 시 작성자 추적용 (현재는 nullable)
+  ADD COLUMN IF NOT EXISTS user_id                UUID    REFERENCES auth.users(id) ON DELETE SET NULL;
 
 -- [B] category constraint에 'spot' 추가 (기존: cafe/restaurant/bar/dessert)
 ALTER TABLE places DROP CONSTRAINT IF EXISTS places_category_check;
@@ -191,25 +193,51 @@ ALTER TABLE places ADD CONSTRAINT places_category_check
   CHECK (category IN ('cafe','restaurant','bar','dessert','spot'));
 
 -- [C] RLS 쓰기 정책 — places
-CREATE POLICY IF NOT EXISTS "Anyone can insert places"
-  ON places FOR INSERT WITH CHECK (true);
-CREATE POLICY IF NOT EXISTS "Anyone can update custom places"
-  ON places FOR UPDATE USING (source = 'custom');
-CREATE POLICY IF NOT EXISTS "Anyone can delete custom places"
-  ON places FOR DELETE USING (source = 'custom');
+DROP POLICY IF EXISTS "Anyone can insert places" ON places;
+CREATE POLICY "Anyone can insert places"
+ON places FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Anyone can update custom places" ON places;
+CREATE POLICY "Anyone can update custom places"
+ON places FOR UPDATE USING (source = 'custom');
+
+DROP POLICY IF EXISTS "Anyone can delete custom places" ON places;
+CREATE POLICY "Anyone can delete custom places"
+ON places FOR DELETE USING (source = 'custom');
   -- ※ source='default' 기본 장소는 RLS로 삭제/수정 불가
 
+-- ── 향후 로그인 기능 추가 시 아래 정책으로 교체하세요 ──────────────────
+-- 현재 "Anyone" 정책을 삭제하고 아래를 활성화:
+--
+-- CREATE POLICY "Owner can update own custom places"
+--   ON places FOR UPDATE
+--   USING (source = 'custom' AND auth.uid() = user_id);
+--
+-- CREATE POLICY "Owner can delete own custom places"
+--   ON places FOR DELETE
+--   USING (source = 'custom' AND auth.uid() = user_id);
+--
+-- 관리자(is_admin) 지원을 위해서는 auth.users 메타데이터 또는
+-- 별도 user_roles 테이블을 생성하고 SECURITY DEFINER 함수로 권한 체크
+-- ─────────────────────────────────────────────────────────────────────
+
 -- [C] RLS 쓰기 정책 — place_tags
-CREATE POLICY IF NOT EXISTS "Anyone can insert place_tags"
-  ON place_tags FOR INSERT WITH CHECK (true);
-CREATE POLICY IF NOT EXISTS "Anyone can delete place_tags"
-  ON place_tags FOR DELETE USING (true);
+DROP POLICY IF EXISTS "Anyone can insert place_tags" ON place_tags;
+CREATE POLICY "Anyone can insert place_tags"
+ON place_tags FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Anyone can delete place_tags" ON place_tags;
+CREATE POLICY "Anyone can delete place_tags"
+ON place_tags FOR DELETE USING (true);
 
 -- [C] RLS 쓰기 정책 — place_images
-CREATE POLICY IF NOT EXISTS "Anyone can insert place_images"
-  ON place_images FOR INSERT WITH CHECK (true);
-CREATE POLICY IF NOT EXISTS "Anyone can delete place_images"
-  ON place_images FOR DELETE USING (true);
+DROP POLICY IF EXISTS "Anyone can insert place_images" ON place_images;
+CREATE POLICY "Anyone can insert place_images"
+ON place_images FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Anyone can delete place_images" ON place_images;
+CREATE POLICY "Anyone can delete place_images"
+ON place_images FOR DELETE USING (true);
 
 -- ============================================================
 -- [D] Seed: 17개 태그
