@@ -70,7 +70,7 @@ function placeToForm(place) {
 }
 
 export default function PlaceFormModal({ isOpen, onClose, initialData }) {
-  const { addPlace, updatePlace, triggerRefresh } = usePlaceStore()
+  const { triggerRefresh } = usePlaceStore()
   const isEdit = Boolean(initialData)
 
   const [form, setForm] = useState(EMPTY_FORM)
@@ -122,15 +122,10 @@ export default function PlaceFormModal({ isOpen, onClose, initialData }) {
     const placeData = formToPlace(form)
 
     try {
-      if (supabase) {
-        await handleSupabaseSubmit(placeData)
-      } else {
-        if (isEdit) {
-          updatePlace(initialData.id, placeData)
-        } else {
-          addPlace(placeData)
-        }
+      if (!supabase) {
+        throw new Error('Supabase가 연결되어 있지 않습니다. .env.local에 키를 설정해주세요.')
       }
+      await handleSupabaseSubmit(placeData)
       setToast(isEdit ? '수정되었어요!' : '장소가 추가되었어요!')
       setTimeout(() => onClose(), 800)
     } catch (err) {
