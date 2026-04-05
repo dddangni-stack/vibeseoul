@@ -22,8 +22,12 @@ export function PlaceStoreProvider({ children }) {
   const [refreshToken, setRefreshToken] = useState(0)
   const triggerRefresh = useCallback(() => setRefreshToken(t => t + 1), [])
 
+  // 큐레이션 INSERT/UPDATE/DELETE 후 재조회 트리거
+  const [curationRefreshToken, setCurationRefreshToken] = useState(0)
+  const triggerCurationRefresh = useCallback(() => setCurationRefreshToken(t => t + 1), [])
+
   return (
-    <PlaceStoreContext.Provider value={{ refreshToken, triggerRefresh }}>
+    <PlaceStoreContext.Provider value={{ refreshToken, triggerRefresh, curationRefreshToken, triggerCurationRefresh }}>
       {children}
     </PlaceStoreContext.Provider>
   )

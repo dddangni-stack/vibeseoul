@@ -4,16 +4,17 @@
  * 여러 장소를 하나의 테마로 묶은 콘텐츠 카드
  *
  * Props:
- *   - curation: { slug, title, subtitle, cover_image_url, place_ids }
+ *   - curation: { slug, title, subtitle, cover_image_url, curation_places }
  */
 
 import { Link } from 'react-router-dom'
+import { FALLBACK_IMAGE } from '../../lib/imageUtils'
 
 export default function CurationCard({ curation }) {
-  const coverImage = curation.cover_image_url ||
-    'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&q=80'
+  const coverImage = curation.cover_image_url || FALLBACK_IMAGE
 
-  const placeCount = curation.place_ids?.length || 0
+  // useCurations에서 curation_places(id) 조인으로 가져온 배열 길이 사용
+  const placeCount = curation.curation_places?.length || 0
 
   return (
     <Link
@@ -44,7 +45,7 @@ export default function CurationCard({ curation }) {
             transition: 'transform 0.4s ease, opacity 0.3s ease',
           }}
           onError={e => {
-            e.target.src = 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&q=80'
+            e.target.src = FALLBACK_IMAGE
           }}
         />
 

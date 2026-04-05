@@ -4,12 +4,17 @@
  * 에디터가 주제별로 엮은 장소 컬렉션을 카드 그리드로 보여줍니다.
  */
 
+import { useState } from 'react'
 import PageWrapper from '../components/layout/PageWrapper'
 import CurationGrid from '../components/curation/CurationGrid'
+import CurationFormModal from '../components/curation/CurationFormModal'
 import { useCurations } from '../hooks/useCurations'
+import { useAuth } from '../context/AuthContext'
 
 export default function CurationListPage() {
   const { data: curations, loading } = useCurations()
+  const { user } = useAuth()
+  const [modalOpen, setModalOpen] = useState(false)
 
   return (
     <PageWrapper>
@@ -47,6 +52,42 @@ export default function CurationListPage() {
 
       {/* 큐레이션 그리드 */}
       <CurationGrid curations={curations} loading={loading} />
+
+      {/* FAB: 로그인한 사용자만 표시 */}
+      {user && (
+        <button
+          onClick={() => setModalOpen(true)}
+          style={{
+            position: 'fixed',
+            bottom: '28px',
+            right: '20px',
+            width: '52px',
+            height: '52px',
+            borderRadius: '50%',
+            backgroundColor: '#2C2C2C',
+            color: '#FAF8F5',
+            fontSize: '26px',
+            fontWeight: 300,
+            border: 'none',
+            cursor: 'pointer',
+            boxShadow: '0 4px 16px rgba(44,44,44,0.28)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 100,
+            lineHeight: 1,
+          }}
+          aria-label="큐레이션 추가"
+        >
+          +
+        </button>
+      )}
+
+      <CurationFormModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        initialData={null}
+      />
     </PageWrapper>
   )
 }

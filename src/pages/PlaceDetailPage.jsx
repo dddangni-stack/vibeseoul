@@ -37,7 +37,7 @@ export default function PlaceDetailPage() {
   const navigate = useNavigate()
   const { place, loading, error } = usePlaceDetail(slug)
   const { deleteCustomPlace, hidePlace, triggerRefresh } = usePlaceStore()
-  const { user } = useAuth()
+  const { user, isAdmin } = useAuth()
 
   const [modalOpen, setModalOpen] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -76,7 +76,7 @@ export default function PlaceDetailPage() {
   }
 
   const isCustom = Boolean(place.isCustom || place.source === 'custom')
-  const canEdit = isCustom && Boolean(user && place.user_id === user.id)
+  const canEdit = isCustom && (Boolean(user && place.user_id === user.id) || isAdmin)
 
   // 태그 데이터 정리 (Supabase 모드 / 로컬 모드 모두 지원)
   const tags = place.place_tags

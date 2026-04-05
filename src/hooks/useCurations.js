@@ -5,12 +5,14 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { usePlaceStore } from '../context/PlaceStoreContext'
 
 // 큐레이션 목록
 export function useCurations({ limit = 10 } = {}) {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const { curationRefreshToken } = usePlaceStore()
 
   useEffect(() => {
     let cancelled = false
@@ -18,10 +20,10 @@ export function useCurations({ limit = 10 } = {}) {
       setLoading(true)
       try {
         if (supabase) {
+          // is_published 필터 제거 — RLS가 서버에서 소유자/admin 미게시 큐레이션 필터링
           const { data: rows, error: err } = await supabase
             .from('curations')
-            .select('*')
-            .eq('is_published', true)
+            .select('*, curation_places(id)')
             .order('display_order')
             .limit(limit)
           if (err) throw err
@@ -37,7 +39,7 @@ export function useCurations({ limit = 10 } = {}) {
     }
     fetch()
     return () => { cancelled = true }
-  }, [limit])
+  }, [limit, curationRefreshToken])
 
   return { data, loading, error }
 }
@@ -48,6 +50,7 @@ export function useCurationDetail(slug) {
   const [places, setPlaces] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const { curationRefreshToken } = usePlaceStore()
 
   useEffect(() => {
     if (!slug) return
@@ -83,7 +86,7 @@ export function useCurationDetail(slug) {
 
     fetch()
     return () => { cancelled = true }
-  }, [slug])
+  }, [slug, curationRefreshToken])
 
   return { curation, places, loading, error }
 }

@@ -22,7 +22,7 @@ import { supabase } from '../../lib/supabase'
 
 export default function PlaceCard({ place, showBookmark = false, size = 'default', onEdit }) {
   const { deleteCustomPlace, hidePlace, triggerRefresh } = usePlaceStore()
-  const { user } = useAuth()
+  const { user, isAdmin } = useAuth()
   const navigate = useNavigate()
   const [confirmDelete, setConfirmDelete] = useState(false)
 
@@ -34,7 +34,7 @@ export default function PlaceCard({ place, showBookmark = false, size = 'default
   const coverImage = getPlaceImage(place)
 
   const isCustom = Boolean(place.isCustom || place.source === 'custom')
-  const canEdit = isCustom && Boolean(user && place.user_id === user.id)
+  const canEdit = isCustom && (Boolean(user && place.user_id === user.id) || isAdmin)
 
   async function handleDelete() {
     if (supabase) {

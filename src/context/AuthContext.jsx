@@ -12,6 +12,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { isAdmin as checkAdmin } from '../lib/admin'
 
 const AuthContext = createContext(null)
 
@@ -89,7 +90,7 @@ export function AuthProvider({ children }) {
     setSession(null)
   }
 
-  const value = { session, user, loading, signIn, signUp, signOut }
+  const value = { session, user, loading, signIn, signUp, signOut, isAdmin: checkAdmin(user) }
 
   return (
     <AuthContext.Provider value={value}>
