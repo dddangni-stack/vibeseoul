@@ -59,10 +59,10 @@ export default function CurationListPage() {
           onClick={() => setModalOpen(true)}
           style={{
             position: 'fixed',
-            bottom: '28px',
-            right: '20px',
-            width: '52px',
-            height: '52px',
+            top: '96px',
+            right: '24px',
+            width: '56px',
+            height: '56px',
             borderRadius: '50%',
             backgroundColor: '#2C2C2C',
             color: '#FAF8F5',
@@ -70,7 +70,7 @@ export default function CurationListPage() {
             fontWeight: 300,
             border: 'none',
             cursor: 'pointer',
-            boxShadow: '0 4px 16px rgba(44,44,44,0.28)',
+            boxShadow: '0 4px 20px rgba(44,44,44,0.35)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',

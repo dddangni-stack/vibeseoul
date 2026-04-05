@@ -258,7 +258,7 @@ export default function PlaceListPage() {
         title="장소 추가"
         style={{
           position: 'fixed',
-          bottom: '28px',
+          top: '96px',
           right: '24px',
           width: '56px',
           height: '56px',
@@ -269,7 +269,7 @@ export default function PlaceListPage() {
           cursor: 'pointer',
           fontSize: '26px',
           lineHeight: 1,
-          boxShadow: '0 4px 20px rgba(44,44,44,0.25)',
+          boxShadow: '0 4px 20px rgba(44,44,44,0.35)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
