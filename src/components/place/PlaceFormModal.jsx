@@ -126,7 +126,14 @@ export default function PlaceFormModal({ isOpen, onClose, initialData }) {
       const url = await uploadPlaceImage(supabase, file, user.id)
       set('cover_image_url', url)
     } catch (err) {
-      setUploadError('이미지 업로드에 실패했어요. 다시 시도하거나 URL을 직접 입력해주세요.')
+      console.error('[imageUpload]', err)
+      const msg = err?.message || ''
+      let hint = '이미지 업로드에 실패했어요.'
+      if (msg.includes('Bucket not found')) hint = '스토리지 버킷이 없습니다. Supabase에서 "place-images" 버킷을 먼저 생성해주세요.'
+      else if (msg.includes('violates row-level security') || msg.includes('not authorized')) hint = '업로드 권한이 없습니다. 버킷 RLS 정책을 확인해주세요.'
+      else if (msg.includes('Payload too large') || msg.includes('too large')) hint = '파일 크기가 너무 큽니다. 더 작은 이미지를 선택해주세요.'
+      else if (msg) hint = `업로드 실패: ${msg}`
+      setUploadError(hint)
     } finally {
       setUploading(false)
     }

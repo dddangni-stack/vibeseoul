@@ -31,7 +31,11 @@ export async function uploadPlaceImage(supabase, file, userId) {
 
   const { error: uploadError } = await supabase.storage
     .from('place-images')
-    .upload(path, file, { cacheControl: '3600', upsert: false })
+    .upload(path, file, {
+      cacheControl: '3600',
+      upsert: false,
+      contentType: file.type,
+    })
 
   if (uploadError) throw uploadError
 
