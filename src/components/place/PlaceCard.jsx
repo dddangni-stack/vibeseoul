@@ -16,10 +16,12 @@ import Badge from '../common/Badge'
 import BookmarkButton from './BookmarkButton'
 import { getPlaceTags } from '../../lib/tags'
 import { usePlaceStore } from '../../context/PlaceStoreContext'
+import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
 
 export default function PlaceCard({ place, showBookmark = false, size = 'default', onEdit }) {
   const { deleteCustomPlace, hidePlace, triggerRefresh } = usePlaceStore()
+  const { user } = useAuth()
   const navigate = useNavigate()
   const [confirmDelete, setConfirmDelete] = useState(false)
 
@@ -33,6 +35,7 @@ export default function PlaceCard({ place, showBookmark = false, size = 'default
     'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600&q=70'
 
   const isCustom = Boolean(place.isCustom || place.source === 'custom')
+  const canEdit = isCustom && Boolean(user && place.user_id === user.id)
 
   async function handleDelete() {
     if (supabase) {
@@ -169,11 +172,11 @@ export default function PlaceCard({ place, showBookmark = false, size = 'default
           </div>
         )}
 
-        {/* 액션 버튼 영역 — Supabase 모드에선 custom 장소만, 로컬 모드에선 모든 장소 */}
-        {(isCustom || !supabase) && (
+        {/* 액션 버튼 영역 — Supabase 모드에선 소유자만, 로컬 모드에선 모든 장소 */}
+        {(canEdit || !supabase) && (
         <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
-          {/* 수정 버튼: 사용자 추가 장소만 */}
-          {isCustom && onEdit && (
+          {/* 수정 버튼: 소유자만 */}
+          {canEdit && onEdit && (
             <button
               onClick={() => onEdit(place)}
               style={{
@@ -198,7 +201,7 @@ export default function PlaceCard({ place, showBookmark = false, size = 'default
             <button
               onClick={() => setConfirmDelete(true)}
               style={{
-                flex: isCustom && onEdit ? 1 : 'none',
+                flex: canEdit && onEdit ? 1 : 'none',
                 padding: '7px 12px',
                 fontSize: '12px',
                 fontWeight: 600,
@@ -210,7 +213,7 @@ export default function PlaceCard({ place, showBookmark = false, size = 'default
                 fontFamily: 'inherit',
               }}
             >
-              {isCustom ? '삭제' : '숨기기'}
+              {canEdit ? '삭제' : '숨기기'}
             </button>
           ) : (
             /* 삭제 확인 인라인 */

@@ -27,6 +27,7 @@ import Spinner from '../components/common/Spinner'
 import PageWrapper from '../components/layout/PageWrapper'
 import { usePlaceDetail } from '../hooks/usePlaceDetail'
 import { usePlaceStore } from '../context/PlaceStoreContext'
+import { useAuth } from '../context/AuthContext'
 import { getPlaceTags } from '../lib/tags'
 import { getCategoryLabel, getPriceDescription } from '../utils/formatters'
 import { supabase } from '../lib/supabase'
@@ -36,6 +37,7 @@ export default function PlaceDetailPage() {
   const navigate = useNavigate()
   const { place, loading, error } = usePlaceDetail(slug)
   const { deleteCustomPlace, hidePlace, triggerRefresh } = usePlaceStore()
+  const { user } = useAuth()
 
   const [modalOpen, setModalOpen] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -74,6 +76,7 @@ export default function PlaceDetailPage() {
   }
 
   const isCustom = Boolean(place.isCustom || place.source === 'custom')
+  const canEdit = isCustom && Boolean(user && place.user_id === user.id)
 
   // 태그 데이터 정리 (Supabase 모드 / 로컬 모드 모두 지원)
   const tags = place.place_tags
@@ -221,11 +224,11 @@ export default function PlaceDetailPage() {
             </div>
           )}
 
-          {/* 수정 / 삭제 버튼 영역 — Supabase 모드에선 custom 장소만 표시 */}
-          {(isCustom || !supabase) && (
+          {/* 수정 / 삭제 버튼 영역 — Supabase 모드에선 소유자만 표시 */}
+          {(canEdit || !supabase) && (
           <div style={{ display: 'flex', gap: '8px', marginBottom: '28px' }}>
-            {/* 수정: 사용자 추가 장소만 */}
-            {isCustom && (
+            {/* 수정: 소유자만 */}
+            {canEdit && (
               <button
                 onClick={() => setModalOpen(true)}
                 style={{
@@ -275,13 +278,13 @@ export default function PlaceDetailPage() {
                   <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
                   <path d="M10 11v6M14 11v6" />
                 </svg>
-                {isCustom ? '삭제' : '목록에서 숨기기'}
+                {canEdit ? '삭제' : '목록에서 숨기기'}
               </button>
             ) : (
               /* 삭제 확인 */
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <span style={{ fontSize: '13px', color: '#5C5C5C' }}>
-                  {isCustom ? '정말 삭제할까요?' : '목록에서 숨길까요?'}
+                  {canEdit ? '정말 삭제할까요?' : '목록에서 숨길까요?'}
                 </span>
                 <button
                   onClick={handleDelete}
@@ -380,8 +383,8 @@ export default function PlaceDetailPage() {
       {/* 유사 장소 */}
       <SimilarPlaces currentPlaceId={place.id} tagSlugs={tagSlugs} />
 
-      {/* 수정 모달 (사용자 추가 장소만) */}
-      {isCustom && (
+      {/* 수정 모달 (소유자만) */}
+      {canEdit && (
         <PlaceFormModal
           isOpen={modalOpen}
           onClose={() => setModalOpen(false)}

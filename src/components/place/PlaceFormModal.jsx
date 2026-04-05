@@ -10,6 +10,7 @@
 
 import { useState, useEffect } from 'react'
 import { usePlaceStore } from '../../context/PlaceStoreContext'
+import { useAuth } from '../../context/AuthContext'
 import { TAGS } from '../../lib/tags'
 import { supabase } from '../../lib/supabase'
 
@@ -71,6 +72,7 @@ function placeToForm(place) {
 
 export default function PlaceFormModal({ isOpen, onClose, initialData }) {
   const { triggerRefresh } = usePlaceStore()
+  const { user } = useAuth()
   const isEdit = Boolean(initialData)
 
   const [form, setForm] = useState(EMPTY_FORM)
@@ -125,6 +127,9 @@ export default function PlaceFormModal({ isOpen, onClose, initialData }) {
       if (!supabase) {
         throw new Error('Supabase가 연결되어 있지 않습니다. .env.local에 키를 설정해주세요.')
       }
+      if (!user) {
+        throw new Error('로그인이 필요합니다. 로그인 후 장소를 추가할 수 있어요.')
+      }
       await handleSupabaseSubmit(placeData)
       setToast(isEdit ? '수정되었어요!' : '장소가 추가되었어요!')
       setTimeout(() => onClose(), 800)
@@ -142,6 +147,10 @@ export default function PlaceFormModal({ isOpen, onClose, initialData }) {
       .filter(Boolean)
 
     if (isEdit) {
+      // 소유자 확인
+      if (initialData.user_id && initialData.user_id !== user.id) {
+        throw new Error('본인이 추가한 장소만 수정할 수 있어요.')
+      }
       // 수정: place 업데이트 후 tags/images 재삽입
       const { error: upErr } = await supabase
         .from('places')
@@ -197,6 +206,7 @@ export default function PlaceFormModal({ isOpen, onClose, initialData }) {
           cover_image_url: placeData.cover_image_url,
           is_published: true,
           source: 'custom',
+          user_id: user.id,
         })
         .select('id')
         .single()

@@ -50,20 +50,31 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  // 이메일 매직 링크 로그인 (Supabase)
-  // 로컬 모드에서는 이메일만으로 바로 로그인 처리
-  async function signIn(email) {
+  // 이메일 + 비밀번호 로그인
+  async function signIn(email, password) {
     if (supabase) {
-      const { error } = await supabase.auth.signInWithOtp({ email })
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) throw error
-      return { message: '이메일을 확인하세요! 로그인 링크를 보내드렸습니다.' }
     } else {
-      // 로컬 데모 모드: 이메일을 그대로 사용자로 저장
+      // 로컬 데모 모드
       const u = { id: 'local-user', email, created_at: new Date().toISOString() }
       localStorage.setItem('vibe_seoul_user', JSON.stringify(u))
       setUser(u)
       setSession({ user: u })
-      return { message: '데모 모드: 로그인되었습니다.' }
+    }
+  }
+
+  // 이메일 + 비밀번호 회원가입
+  async function signUp(email, password) {
+    if (supabase) {
+      const { error } = await supabase.auth.signUp({ email, password })
+      if (error) throw error
+    } else {
+      // 로컬 데모 모드: 가입 즉시 로그인
+      const u = { id: 'local-user', email, created_at: new Date().toISOString() }
+      localStorage.setItem('vibe_seoul_user', JSON.stringify(u))
+      setUser(u)
+      setSession({ user: u })
     }
   }
 
@@ -78,7 +89,7 @@ export function AuthProvider({ children }) {
     setSession(null)
   }
 
-  const value = { session, user, loading, signIn, signOut }
+  const value = { session, user, loading, signIn, signUp, signOut }
 
   return (
     <AuthContext.Provider value={value}>

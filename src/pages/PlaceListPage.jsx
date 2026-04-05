@@ -9,7 +9,8 @@
  */
 
 import { useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import PageWrapper from '../components/layout/PageWrapper'
 import PlaceGrid from '../components/place/PlaceGrid'
 import PlaceFormModal from '../components/place/PlaceFormModal'
@@ -21,6 +22,8 @@ import { SORT_OPTIONS } from '../lib/constants'
 
 export default function PlaceListPage() {
   const [searchParams, setSearchParams] = useSearchParams()
+  const navigate = useNavigate()
+  const { user } = useAuth()
   const activeTag = searchParams.get('tag') || ''
   const sortParam = searchParams.get('sort') || 'latest'
 
@@ -31,6 +34,10 @@ export default function PlaceListPage() {
   const [editTarget, setEditTarget] = useState(null)
 
   function openAdd() {
+    if (!user) {
+      navigate('/login?redirect=/places')
+      return
+    }
     setEditTarget(null)
     setModalOpen(true)
   }
