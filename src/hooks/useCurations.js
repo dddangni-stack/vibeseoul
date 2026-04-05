@@ -20,18 +20,20 @@ export function useCurations({ limit = 10 } = {}) {
       setLoading(true)
       try {
         if (supabase) {
-          // is_published 필터 제거 — RLS가 서버에서 소유자/admin 미게시 큐레이션 필터링
+          // curation_places 조인 제거 — JOIN 실패 시 무음으로 전체 목록 사라지는 버그 방지
+          // 정렬: created_at 내림차순 — display_order NULL인 신규 큐레이션도 맨 위에 표시
           const { data: rows, error: err } = await supabase
             .from('curations')
-            .select('*, curation_places(id)')
-            .order('display_order')
-            .limit(limit)
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(50)
           if (err) throw err
           if (!cancelled) setData(rows)
         } else {
           if (!cancelled) setData([])
         }
       } catch (err) {
+        console.error('[useCurations]', err)
         if (!cancelled) setError(err)
       } finally {
         if (!cancelled) setLoading(false)
